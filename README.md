@@ -4,15 +4,25 @@ This project implements and benchmarks the `exclusive_scan` operation using C++2
 
 ## Build and Run
 
-**Requirements:** C++20 compiler (GCC/Clang/MSVC) and CMake.
+**For maxOS with Apple Silicon:**
 
 ```bash
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make
-./univ_cpp_lab2
+aarch64-apple-darwin25-g++-15 \
+  -std=c++20 -O3 -march=native \
+  -isysroot $(xcrun --show-sdk-path) \
+  src/main.cpp \
+  -lpthread \
+  -o prog
+  
+./prog
 ```
+**For other u can build like this:**
+
+```bash
+gcc -std=c++20 -O3 -march=native src/main.cpp -lpthread -o prog
+./prog
+```
+
 
 # Benchmark Analysis & Configuration
 
@@ -21,11 +31,11 @@ make
 The following results were obtained on a **MacBook M1** (8 Cores). The tests compare the Standard Library sequential/parallel policies against a custom Map-Reduce implementation with varying thread counts ($K$).
 
 ### Performance Summary
-| Dataset Size | `std::execution::seq` | `std::execution::par` | Custom Algo (Best) | Speedup (vs Seq) |
+| Dataset Size | `std::execution::seq` | `std::execution::par` | Custom Algo (Best K) | Speedup (vs Seq) |
 | :--- | :--- | :--- | :--- | :--- |
-| **100,000** | 0.034 ms | **0.034 ms** | 0.09 ms | ~1.0x (None) |
-| **10,000,000** | 10.52 ms | **4.32 ms** | 4.65 ms | 2.43x |
-| **50,000,000** | 106.14 ms | **19.49 ms** | 23.92 ms | 5.44x |
+| **100,000** | 0.037 ms | **0.039 ms** | 0.13 ms (K=2) | ~1.0x |
+| **10,000,000** | 4.19 ms | **3.95 ms** | 4.35 ms (K=2) | ~1.0x |
+| **50,000,000** | 20.14 ms | **23.20 ms** | 26.85 ms (K=32) | ~0.75x |
 
 ### Detailed Analysis by Dataset
 
@@ -47,13 +57,42 @@ The custom implementation uses a "K chunks" approach. The "sweet spot" for this 
 
 | Threads (K) | Time (ms) | Speedup | Note |
 | :--- | :--- | :--- | :--- |
-| 1 | 32.57 | 3.26 | Baseline threaded overhead |
-| **3** | **23.92** | **4.44** | **Peak Performance** |
-| 4 | 24.36 | 4.36 | Stable |
-| 8 | 28.52 | 3.72 | Efficiency begins to drop |
-| 16 | 26.41 | 4.02 | High context switching |
-| 32 | 28.31 | 3.75 | Oversubscription |
+| 1 | 48.27 | 0.42 | Baseline overhead |
+| 2 | 30.28 | 0.67 | Better |
+| 3 | 28.06 | 0.72 | Stable |
+| 4 | 26.92 | 0.75 | Good scaling |
+| 5 | 27.82 | 0.72 | Slight drop |
+| 6 | 29.48 | 0.68 | Bandwidth bound |
+| 7 | 28.36 | 0.71 | Stable |
+| 8 | 29.14 | 0.69 | Leveling off |
+| 9 | 33.22 | 0.61 | Oversubscription begins |
+| 10 | 29.41 | 0.68 | Stable |
+| 11 | 29.12 | 0.69 | Stable |
+| 12 | 28.91 | 0.70 | Stable |
+| 13 | 29.24 | 0.69 | Slight drop |
+| 14 | 54.93 | 0.37 | Context switching overhead |
+| 15 | 31.16 | 0.65 | Drop |
+| 16 | 27.74 | 0.73 | Recovering |
+| **32** | **26.85** | **0.75** | **Best performance** |
 
-> **Note:** The "Ratio (Best K / Threads)" metric suggests optimal efficiency is reached when using approximately 30-40% of the available hardware concurrency for this specific memory-bound task.
+---
+
+## Conclusion
+
+This laboratory work implemented and benchmarked several variants of the exclusive_scan operation. The results show that the standard library implementation delivers the best performance for small and medium datasets, while the custom multi-threaded algorithm becomes effective only on large inputs but still remains limited by the memory bandwidth of the M1 architecture. Overall, the optimal number of threads depends on dataset size, and excessive parallelism does not guarantee better performance.
+
+---
+
+### Example Output
+
+<img src="images/photo1.png" width="500">
+
+---
+
+<img src="images/photo2.png" width="500">
+
+---
+
+<img src="images/photo3.png" width="500">
 
 ---

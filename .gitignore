@@ -1,5 +1,7 @@
 .idea/
 
+prog
+
 .DS_Store
 
 cmake-build-*/
