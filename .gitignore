@@ -2,6 +2,8 @@
 
 prog
 
+prog.dSYM
+
 .DS_Store
 
 cmake-build-*/
